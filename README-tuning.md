@@ -19,7 +19,7 @@ Additionally, there are a set of recommendations for what to use when choosing w
 ## Calibration process at a high level
 
 All steps should be performed with the kinematic grid active (i.e., `SET_GCODE_OFFSET X=0 Y=0 Z=0`).  Note, once you have
-configured `gcode_*_offset`, you will need to set this after each toolchange.
+configured `gcode_*_offset`, you will need to set this after each toolchange you do while carrying out these steps.
 
 1. Configure the physical / kinematic ranges, which for the reasons stated below should be with 0 at the extreme end of
    movement of each axis, and with Z=0 at the lowest possible point that you could possibly ever configure it.
@@ -38,7 +38,24 @@ configured `gcode_*_offset`, you will need to set this after each toolchange.
    `gcode_y_offset` and `gcode_z_offset`.  These positions should again be in the kinematic grid (again, `SET_GCODE_OFFSET
    X=0 Y=0 Z=0`)
 
-4. Pick a toolhead, any toolhead, and with the kine
+4. Pick a toolhead, any toolhead, and move it over a firmly attached nudge probe using G0/G1 movement commands and/or the
+   movement buttons in Mainsail.  Get it somewhere above the tip of the nudge pin, then run
+   `NUDGE_GET_PROBE_POSITION`. This will move the nozzle around and trigger the nudge probe from different directions, and
+   in the process, fairly precisely locate the position of the nudge probe relative to the _currently running_ kinematic
+   grid.  This position is, by default, stored as a macro variable, meaning that the next time the printer is reset, it is
+   discarded (after all, the relative location is no longer known precisely).  It's also discarded by the `PRINT_END`
+   macro (and M18/M84 commands?  Can that be done?).
+   
+5. With your nudge probe position accurately known by one toolhead, you can now run `NUDGE_FIND_TOOL_OFFSETS`.  This will
+   run through each of your other toolheads (probably just one initially), and find their relative position to the nudge
+   probe.  Assuming you have set the _gross correction_ (the `gcode_[xyz]_offset` under `[tool T1]`), then the nudge
+   location macro should be able to find the nudge pin, even though each toolhead generally hangs a little differently to
+   each other, even if you are using the same parts in the construction.  The _correction_ is stored as a _save variable_,
+   which _is_ preserved between printer restarts.  This can be thought of as fine–tuning the `gcode_x_offset`,
+   `gcode_y_offset`, etc that you have configured.  You should now have the ability to run aligned prints!
+
+More details on all of this is in the below sections.  If the above is not enough, please do read below, and direct all
+criticism (for now) to Sam Vilain, @daddybuiltit on Discord.
 
 ## Configuring the physical grid (`position_min` and `position_max`)
 
